@@ -49,11 +49,15 @@ class DatabaseController {
 
     // Notwendige Register definieren
     const requiredRegisters = [
-      { name: 'Register 1' },
-      { name: 'Register 2' },
-      { name: 'Register 3' }
-
-      // Weitere Register nach Bedarf hinzufügen
+      { name: 'Querflöten' },
+      { name: 'Klarinetten' },
+      { name: 'Saxophone' },
+      { name: 'Flügelhorn/Trompeten' },
+      { name: 'Horn' },
+      { name: 'Tenorhörner' },
+      { name: 'Posaunen' },
+      { name: 'Schlagzeug' },
+      { name: 'Tuben' }
     ];
 
     // Prüfen, ob alle Register vorhanden sind, sonst anlegen
