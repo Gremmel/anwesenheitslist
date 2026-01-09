@@ -16,12 +16,14 @@
                   </div>
                   <div class="col">
                     <div class="d-flex justify-content-end">
-                      <button @click="delUser(user.id, user.username)" type="button" class="btn btn-danger">
-                        <i class="bi bi-trash"></i>
-                      </button>
-                      <button @click="editUser(user.id)" class="btn btn-primary ms-1">
-                        <i class="bi bi-pencil"></i>
-                      </button>
+                      <template v-if="user.username !== 'admin'">
+                        <button @click="delUser(user.id, user.username)" type="button" class="btn btn-danger">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                        <button @click="editUser(user.id)" class="btn btn-primary ms-1">
+                          <i class="bi bi-pencil"></i>
+                        </button>
+                      </template>
                     </div>
                   </div>
                 </div>
@@ -100,12 +102,14 @@
                   </select>
                 </td>
                 <td>
-                  <button @click="delUser(user.id, user.username)" type="button" class="btn btn-danger">
-                    <i class="bi bi-trash"></i>
-                  </button>
-                  <button @click="editUser(user.id)" class="btn btn-primary ms-1">
-                    <i class="bi bi-pencil"></i>
-                  </button>
+                  <template v-if="user.username !== 'admin'">
+                    <button @click="delUser(user.id, user.username)" type="button" class="btn btn-danger">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                    <button @click="editUser(user.id)" class="btn btn-primary ms-1">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                  </template>
                 </td>
               </tr>
             </tbody>
@@ -318,7 +322,7 @@
     // Hier kannst du die Funktionalität zum Löschen des Benutzers aufrufen
     try {
       console.log('deleteUser', delUserId.value);
-      const response = await fetch('/api/deluser', {
+      const response = await fetch('/api/delUser', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
