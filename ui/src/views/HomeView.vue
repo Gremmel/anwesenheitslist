@@ -7,7 +7,7 @@
       <div v-if="userActive" class="container">
         <div class="row">
           <div class="col-md-4 mb-4" v-for="event in eventList" :key="event.id">
-            <div class="card h-100 event-card" :style="eventParticipation[event.id] ? 'border: solid 2px green;' : ''">
+            <div class="card h-100 event-card" :style="eventParticipation[event.id] === 1 ? 'border: solid 2px green;' : eventParticipation[event.id] === 0 ? 'border: solid 2px red;' : ''">
               <div class="card-header">
                 <button @click="showDetails(event)" class="btn btn-sm btn-secondary me-2 float-start">
                   <i class="bi bi-info-circle"></i> Details
@@ -31,6 +31,7 @@
                   </span>
                 </div>
                 <!-- Datum und Uhrzeit -->
+
                 <div class="row">
                   <div class="col">
                     <i class="bi bi-calendar-event"></i> <strong>Datum:</strong>
@@ -48,20 +49,52 @@
                   </div>
                 </div>
 
+                <!-- Statistik für das Event -->
+                <div class="mt-2 mb-2" v-if="eventStatistics[event.id]">
+                  <span title="Zugesagt" style="color:green; font-size:1.2em;">
+                    <i class="bi bi-hand-thumbs-up"></i> {{ eventStatistics[event.id].zugesagt }}
+                  </span>
+                  <span title="Abgesagt" style="color:red; font-size:1.2em;" class="ms-3">
+                    <i class="bi bi-hand-thumbs-down"></i> {{ eventStatistics[event.id].abgesagt }}
+                  </span>
+                  <span title="Keine Rückmeldung" style="color:gray; font-size:1.2em;" class="ms-3">
+                    <i class="bi bi-question-circle"></i> {{ eventStatistics[event.id].keineRückmeldung }}
+                  </span>
+                </div>
+
                 <!-- Teilnahme-Switch -->
-                <div class="row">
-                  <div class="col">
-                    Ich bin dabei
+                <div class="row align-items-center">
+                  <div class="col text-end">
+                    <button
+                      class="btn btn-outline-danger btn-sm"
+                      :class="{'active': eventParticipation[event.id] === 0}"
+                      @click="setParticipation(event, 0)"
+                      :aria-pressed="eventParticipation[event.id] === 0"
+                      :title="'Absage'"
+                    >
+                      <i class="bi bi-hand-thumbs-down"></i>
+                    </button>
+                  </div>
+                  <div class="col text-center ms-1 me-1 ps-1 pe-1">
+                    <span v-if="eventParticipation[event.id] === 1" class="fw-bold">Bin dabei</span>
+                    <span v-if="eventParticipation[event.id] === 0" class="fw-bold">Bin nicht dabei</span>
+                    <span v-if="eventParticipation[event.id] === undefined" class="fw-bold">Teilnahme ?</span>
                   </div>
                   <div class="col text-start">
-                    <div class="form-check form-switch">
-                      <input class="form-check-input" role="switch" type="checkbox"
-                        :id="'eventSwitch-' + event.id"
-                        v-model="eventParticipation[event.id]"
-                        @change="toggleParticipation(event)"
-                      >
-                    </div>
+                    <button
+                      class="btn btn-outline-success btn-sm me-2"
+                      :class="{'active': eventParticipation[event.id] === 1}"
+                      @click="setParticipation(event, 1)"
+                      :aria-pressed="eventParticipation[event.id] === 1"
+                      :title="'Zusage'"
+                    >
+                      <i class="bi bi-hand-thumbs-up"></i>
+                    </button>
                   </div>
+                </div>
+
+                <div class="row">
+
                 </div>
 
                 <div v-if="isAdmin" class="mt-3 text-end">
@@ -100,11 +133,15 @@ import { useRouter } from 'vue-router';
 
 const router = useRouter();
 
-const events = reactive([]);
-// Teilnahme-Status pro Event (eventId: true/false)
-const eventParticipation = reactive({});
 
-// Teilnahme-Status für alle Events laden
+const events = reactive([]);
+// Teilnahme-Status pro Event (eventId: ja/nein/undefined)
+const eventParticipation = reactive({});
+// Statistik pro Event (eventId: {zugesagt, abgesagt, keineRückmeldung})
+const eventStatistics = reactive({});
+
+
+// Teilnahme-Status und Statistik für alle Events laden
 async function loadParticipation() {
   try {
     const response = await fetch(`/api/getEventParticipation/${userStore.user.id}`, {
@@ -116,18 +153,50 @@ async function loadParticipation() {
     console.log('loadParticipation result', result);
 
     if (response.ok && result.participation) {
-      // participation: Array<{event_id, participate}>
+      // participation: Array<{event_id, zugesagt}>
       for (const p of result.participation) {
-        eventParticipation[p.event_id] = true;
+        eventParticipation[p.event_id] = p.zugesagt;
       }
     }
+    // Hole für alle Events die Statistik
+    await loadAllEventStatistics();
   } catch (error) {
     console.error('Fehler beim Laden der Teilnahme:', error);
   }
 }
 
-// Teilnahme toggeln und speichern
-async function toggleParticipation(event) {
+// Für alle Events die Statistik laden
+async function loadAllEventStatistics() {
+  for (const event of events) {
+    await loadEventStatistics(event.id);
+  }
+}
+
+// Statistik für ein Event laden
+async function loadEventStatistics(eventId) {
+  try {
+    const response = await fetch(`/api/getEventParticipations/${eventId}`, {
+      method: 'GET',
+      credentials: 'include'
+    });
+    const result = await response.json();
+    if (response.ok && result.data && result.data.participations) {
+      const stats = { zugesagt: 0, abgesagt: 0, keineRückmeldung: 0 };
+      for (const p of result.data.participations) {
+        if (p.zugesagt === 1) stats.zugesagt++;
+        else if (p.zugesagt === 0) stats.abgesagt++;
+        else stats.keineRückmeldung++;
+      }
+      eventStatistics[eventId] = stats;
+    }
+  } catch (error) {
+    console.error('Fehler beim Laden der Event-Statistik:', error);
+  }
+}
+
+// Teilnahme explizit setzen und speichern
+async function setParticipation(event, value) {
+  eventParticipation[event.id] = value;
   try {
     const response = await fetch('/api/setEventParticipation', {
       method: 'POST',
@@ -138,10 +207,13 @@ async function toggleParticipation(event) {
       body: JSON.stringify({
         userId: userStore.user.id,
         eventId: event.id,
-        zugesagt: eventParticipation[event.id]
+        zugesagt: value
       })
     });
     const result = await response.json();
+
+    await loadEventStatistics(event.id);
+
     if (!response.ok) {
       console.error('Fehler beim Speichern der Teilnahme:', result.message);
     }

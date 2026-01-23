@@ -7,7 +7,21 @@
         </div>
         <div class="card-body">
           <p><strong>Ort:</strong> {{ event.ort }}</p>
+
           <p><strong>Datum / Uhrzeit:</strong> {{ formatDate(event.dateTime) }} um {{ formatTime(event.dateTime) }} Uhr</p>
+
+          <div class="mt-2 ms-1" v-if="participations.length > 0">
+            <span title="Zugesagt" style="color:green; font-size:1.2em;">
+              <i class="bi bi-hand-thumbs-up"></i> {{ statistics().zugesagt }}
+            </span>
+            <span title="Abgesagt" style="color:red; font-size:1.2em;" class="ms-3">
+              <i class="bi bi-hand-thumbs-down"></i> {{ statistics().abgesagt }}
+            </span>
+            <span title="Keine Rückmeldung" style="color:gray; font-size:1.2em;" class="ms-3">
+              <i class="bi bi-question-circle"></i> {{ statistics().keineRückmeldung }}
+            </span>
+          </div>
+
         </div>
       </div>
       <div class="mt-4">
@@ -17,8 +31,12 @@
             <h5>{{ registerName }}</h5>
           </div>
           <ul class="mt-2 mb-2 ms-3">
-            <li v-for="participation in participations.filter(p => p.register_name === registerName)" :key="participation.id" class="">
-              {{ participation.username }}
+            <li v-for="participation in participations.filter(p => p.register_name === registerName)" :key="participation.id" class="d-flex align-items-center gap-2">
+              <span v-if="participation.zugesagt === 1" title="Zugesagt" style="color:green; font-size:1.2em;"><i class="bi bi-hand-thumbs-up"></i></span>
+              <span v-else-if="participation.zugesagt === 0" title="Abgesagt" style="color:red; font-size:1.2em;"><i class="bi bi-hand-thumbs-down"></i></span>
+              <span v-else title="Keine Rückmeldung" style="color:gray; font-size:1.2em;"><i class="bi bi-question-circle"></i></span>
+              <span v-if="participation.zugesagt !== 0 && participation.zugesagt !== 1" class="light-grey">{{ participation.username }}</span>
+              <span v-else >{{ participation.username }}</span>
             </li>
           </ul>
         </div>
@@ -61,6 +79,43 @@ function formatTime(dateTime) {
   return date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
 }
 
+function statistics() {
+  const stats = {
+    zugesagt: 0,
+    abgesagt: 0,
+    keineRückmeldung: 0
+  };
+
+  for (const p of participations.value) {
+    if (p.zugesagt === 1) {
+      stats.zugesagt += 1;
+    } else if (p.zugesagt === 0) {
+      stats.abgesagt += 1;
+    } else {
+      stats.keineRückmeldung += 1;
+    }
+  }
+
+  return stats;
+}
+
+function sortUserByRegisterZugesagt(a, b) {
+  // Zuerst nach register_name alphabetisch, dann nach zugesagt (1 vor 0),
+  // null/undefined am Schluss
+  if (a.register_name < b.register_name) return -1;
+  if (a.register_name > b.register_name) return 1;
+
+  // Beide zugesagt null/undefined
+  if ((a.zugesagt == null) && (b.zugesagt == null)) return 0;
+  // a.zugesagt null/undefined → a nach hinten
+  if (a.zugesagt == null) return 1;
+  // b.zugesagt null/undefined → b nach hinten
+  if (b.zugesagt == null) return -1;
+
+  // Beide Werte vorhanden: 1 vor 0
+  return b.zugesagt - a.zugesagt;
+}
+
 const getEvent = async () => {
   let response;
 
@@ -101,6 +156,7 @@ const loadParticipations = async () => {
 
     if (response.ok) {
       participations.value = result.data.participations;
+      participations.value.sort(sortUserByRegisterZugesagt);
       register.value = result.data.registers;
     } else {
       console.error('Error:', result.message);
@@ -132,4 +188,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.light-grey {
+  color: #b0b0b0;
+}
 </style>
