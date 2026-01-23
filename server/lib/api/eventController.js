@@ -21,22 +21,22 @@ class ChallengesController {
   async getParticipations (eventId) {
     try {
       // Alle User mit Teilnahme-Status für das Event
-      const stmt = dbController.prepare(`
-        SELECT
-          fu.id as user_id,
-          fu.username,
-          fu.email,
-          ez.zugesagt,
-          ez.zugesagt_am,
-          v.id as register_id,
-          v.name as register_name,
-          v.sortierung as register_sortierung
-        FROM fos_user fu
-        LEFT JOIN event_zusagen ez ON fu.id = ez.user_id AND ez.event_id = ?
-        LEFT JOIN user_register uv ON fu.id = uv.user_id
-        LEFT JOIN register v ON uv.register_id = v.id
-        ORDER BY v.sortierung ASC, fu.username ASC
-      `);
+        const stmt = dbController.prepare(`
+          SELECT
+            fu.id as user_id,
+            fu.username,
+            fu.email,
+            ez.zugesagt,
+            ez.zugesagt_am,
+            v.id as register_id,
+            v.name as register_name,
+            v.sortierung as register_sortierung
+          FROM fos_user fu
+          LEFT JOIN event_zusagen ez ON fu.id = ez.user_id AND ez.event_id = ?
+          INNER JOIN user_register uv ON fu.id = uv.user_id
+          LEFT JOIN register v ON uv.register_id = v.id
+          ORDER BY v.sortierung ASC, fu.username ASC
+        `);
       const participations = stmt.all(eventId);
 
       // Alle Register
