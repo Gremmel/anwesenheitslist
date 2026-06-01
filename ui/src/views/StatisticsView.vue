@@ -90,8 +90,11 @@
 
     <!-- Orte -->
     <div v-if="statistics" class="card mb-4">
-      <div class="card-header">
+      <div class="card-header collapsible-header d-flex justify-content-between align-items-center"
+        @click="toggle('location')">
         <h5 class="mb-0"><i class="bi bi-geo-alt"></i> Events nach Ort</h5>
+        <i class="bi d-md-none"
+          :class="collapsed.location ? 'bi-chevron-down' : 'bi-chevron-up'"></i>
       </div>
       <!-- Desktop / Tablet: Tabelle -->
       <div class="card-body p-0 d-none d-md-block">
@@ -129,7 +132,7 @@
         </div>
       </div>
       <!-- Mobile: Karten -->
-      <ul class="list-group list-group-flush d-md-none">
+      <ul v-show="!collapsed.location" class="list-group list-group-flush d-md-none">
         <li v-for="loc in statistics.byLocation" :key="'m-' + loc.ort" class="list-group-item">
           <div class="d-flex justify-content-between align-items-center mb-1">
             <strong>{{ loc.ort }}</strong>
@@ -158,18 +161,24 @@
 
     <!-- User -->
     <div v-if="statistics" class="card mb-4">
-      <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <h5 class="mb-0"><i class="bi bi-people"></i> Teilnahme je Person</h5>
-        <div class="btn-group btn-group-sm">
-          <button class="btn btn-outline-secondary"
-            :class="{ active: sortBy === 'anwesend' }"
-            @click="sortBy = 'anwesend'">Anwesend</button>
-          <button class="btn btn-outline-secondary"
-            :class="{ active: sortBy === 'gemeldet' }"
-            @click="sortBy = 'gemeldet'">Gemeldet</button>
-          <button class="btn btn-outline-secondary"
-            :class="{ active: sortBy === 'name' }"
-            @click="sortBy = 'name'">Name</button>
+      <div class="card-header collapsible-header d-flex justify-content-between align-items-center flex-wrap gap-2"
+        @click.self="toggle('user')">
+        <h5 class="mb-0" @click="toggle('user')"><i class="bi bi-people"></i> Teilnahme je Person</h5>
+        <div class="d-flex align-items-center gap-2" @click.stop>
+          <div class="btn-group btn-group-sm">
+            <button class="btn btn-outline-secondary"
+              :class="{ active: sortBy === 'anwesend' }"
+              @click="sortBy = 'anwesend'">Anwesend</button>
+            <button class="btn btn-outline-secondary"
+              :class="{ active: sortBy === 'gemeldet' }"
+              @click="sortBy = 'gemeldet'">Gemeldet</button>
+            <button class="btn btn-outline-secondary"
+              :class="{ active: sortBy === 'name' }"
+              @click="sortBy = 'name'">Name</button>
+          </div>
+          <i class="bi d-md-none"
+            :class="collapsed.user ? 'bi-chevron-down' : 'bi-chevron-up'"
+            @click="toggle('user')"></i>
         </div>
       </div>
       <!-- Desktop / Tablet: Tabelle -->
@@ -219,7 +228,7 @@
         </div>
       </div>
       <!-- Mobile: Karten -->
-      <ul class="list-group list-group-flush d-md-none">
+      <ul v-show="!collapsed.user" class="list-group list-group-flush d-md-none">
         <li v-for="u in sortedUsers" :key="'m-' + u.userId" class="list-group-item">
           <div class="d-flex justify-content-between align-items-center mb-2">
             <strong class="text-truncate me-2">{{ u.username }}</strong>
@@ -266,18 +275,24 @@
 
     <!-- Register -->
     <div v-if="statistics" class="card mb-4">
-      <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <h5 class="mb-0"><i class="bi bi-music-note-beamed"></i> Teilnahme je Register</h5>
-        <div class="btn-group btn-group-sm">
-          <button class="btn btn-outline-secondary"
-            :class="{ active: sortByReg === 'quote' }"
-            @click="sortByReg = 'quote'">Quote</button>
-          <button class="btn btn-outline-secondary"
-            :class="{ active: sortByReg === 'meldequote' }"
-            @click="sortByReg = 'meldequote'">Meldequote</button>
-          <button class="btn btn-outline-secondary"
-            :class="{ active: sortByReg === 'name' }"
-            @click="sortByReg = 'name'">Name</button>
+      <div class="card-header collapsible-header d-flex justify-content-between align-items-center flex-wrap gap-2"
+        @click.self="toggle('register')">
+        <h5 class="mb-0" @click="toggle('register')"><i class="bi bi-music-note-beamed"></i> Teilnahme je Register</h5>
+        <div class="d-flex align-items-center gap-2" @click.stop>
+          <div class="btn-group btn-group-sm">
+            <button class="btn btn-outline-secondary"
+              :class="{ active: sortByReg === 'quote' }"
+              @click="sortByReg = 'quote'">Quote</button>
+            <button class="btn btn-outline-secondary"
+              :class="{ active: sortByReg === 'meldequote' }"
+              @click="sortByReg = 'meldequote'">Meldequote</button>
+            <button class="btn btn-outline-secondary"
+              :class="{ active: sortByReg === 'name' }"
+              @click="sortByReg = 'name'">Name</button>
+          </div>
+          <i class="bi d-md-none"
+            :class="collapsed.register ? 'bi-chevron-down' : 'bi-chevron-up'"
+            @click="toggle('register')"></i>
         </div>
       </div>
       <!-- Desktop / Tablet: Tabelle -->
@@ -327,7 +342,7 @@
         </div>
       </div>
       <!-- Mobile: Karten -->
-      <ul class="list-group list-group-flush d-md-none">
+      <ul v-show="!collapsed.register" class="list-group list-group-flush d-md-none">
         <li v-for="r in sortedRegisters" :key="'m-' + r.registerId" class="list-group-item">
           <div class="d-flex justify-content-between align-items-center mb-2">
             <strong class="text-truncate me-2">{{ r.registerName }}</strong>
@@ -373,8 +388,11 @@
 
     <!-- Events Liste -->
     <div v-if="statistics" class="card mb-5">
-      <div class="card-header">
+      <div class="card-header collapsible-header d-flex justify-content-between align-items-center"
+        @click="toggle('events')">
         <h5 class="mb-0"><i class="bi bi-calendar-event"></i> Events im Zeitraum</h5>
+        <i class="bi d-md-none"
+          :class="collapsed.events ? 'bi-chevron-down' : 'bi-chevron-up'"></i>
       </div>
       <!-- Desktop / Tablet: Tabelle -->
       <div class="card-body p-0 d-none d-md-block">
@@ -401,7 +419,7 @@
         </div>
       </div>
       <!-- Mobile: Karten -->
-      <ul class="list-group list-group-flush d-md-none">
+      <ul v-show="!collapsed.events" class="list-group list-group-flush d-md-none">
         <li v-for="e in statistics.events" :key="'m-' + e.id" class="list-group-item">
           <div class="d-flex justify-content-between align-items-center">
             <strong>{{ e.bezeichnung }}</strong>
@@ -420,7 +438,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 
 const currentYear = new Date().getFullYear();
 const from = ref(`${currentYear}-01-01`);
@@ -431,6 +449,18 @@ const loading = ref(false);
 const errorMessage = ref('');
 const sortBy = ref('anwesend');
 const sortByReg = ref('quote');
+
+// Klappzustand der Blöcke (greift nur in der Mobile-Ansicht via v-show)
+const collapsed = reactive({
+  location: false,
+  user: false,
+  register: false,
+  events: true
+});
+
+function toggle(key) {
+  collapsed[key] = !collapsed[key];
+}
 const onlyPast = ref(true);
 
 function todayIso() {
@@ -538,6 +568,14 @@ onMounted(() => {
 .progress-bar-purple {
   background-color: #9432a5;
   color: #fff;
+}
+
+/* Klappbare Header nur auf Mobile interaktiv darstellen */
+@media (max-width: 767.98px) {
+  .collapsible-header {
+    cursor: pointer;
+    user-select: none;
+  }
 }
 
 /* Kompaktere Karten auf Smartphones */
