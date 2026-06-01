@@ -165,6 +165,22 @@ class ChallengesController {
           ORDER BY eventCount DESC, ort ASC`
       ).all(fromIso, toIso);
 
+      // Anzahl möglicher Teilnehmer (alle User mit mindestens einem Register)
+      const mitgliederGesamt = Number(dbController.prepare(
+        `SELECT COUNT(DISTINCT fu.id) AS cnt
+           FROM fos_user fu
+           INNER JOIN user_register ur ON ur.user_id = fu.id`
+      ).get()?.cnt) || 0;
+
+      for (const loc of byLocation) {
+        loc.eventCount = Number(loc.eventCount) || 0;
+        loc.zusagen = Number(loc.zusagen) || 0;
+        loc.absagen = Number(loc.absagen) || 0;
+        const erwartet = mitgliederGesamt * loc.eventCount;
+        loc.erwartet = erwartet;
+        loc.offen = Math.max(0, erwartet - loc.zusagen - loc.absagen);
+      }
+
       // Statistik pro User (Anwesenheit + Meldungen)
       // Nur User, die mindestens einem Register zugeordnet sind
       const byUser = dbController.prepare(
@@ -248,11 +264,19 @@ class ChallengesController {
           )`
       ).get(fromIso, toIso);
 
+      const zusagen = Number(totals?.zusagen) || 0;
+      const absagen = Number(totals?.absagen) || 0;
+      const meldungen = Number(totals?.meldungen) || 0;
+      const erwartetGesamt = mitgliederGesamt * eventCount;
+      const offen = Math.max(0, erwartetGesamt - meldungen);
+
       const summary = {
         eventCount,
-        zusagen: Number(totals?.zusagen) || 0,
-        absagen: Number(totals?.absagen) || 0,
-        meldungen: Number(totals?.meldungen) || 0,
+        zusagen,
+        absagen,
+        meldungen,
+        offen,
+        erwartet: erwartetGesamt,
         orte: byLocation.length
       };
 

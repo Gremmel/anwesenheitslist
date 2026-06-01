@@ -54,7 +54,7 @@
 
     <!-- Übersicht -->
     <div v-if="statistics" class="row g-3 mb-4">
-      <div class="col-6 col-md-3">
+      <div class="col-6 col-md-4 col-lg">
         <div class="card text-bg-primary h-100">
           <div class="card-body text-center">
             <div class="display-6">{{ statistics.summary.eventCount }}</div>
@@ -62,7 +62,7 @@
           </div>
         </div>
       </div>
-      <div class="col-6 col-md-3">
+      <div class="col-6 col-md-4 col-lg">
         <div class="card text-bg-success h-100">
           <div class="card-body text-center">
             <div class="display-6">{{ statistics.summary.zusagen }}</div>
@@ -70,7 +70,7 @@
           </div>
         </div>
       </div>
-      <div class="col-6 col-md-3">
+      <div class="col-6 col-md-4 col-lg">
         <div class="card text-bg-danger h-100">
           <div class="card-body text-center">
             <div class="display-6">{{ statistics.summary.absagen }}</div>
@@ -78,8 +78,16 @@
           </div>
         </div>
       </div>
-      <div class="col-6 col-md-3">
+      <div class="col-6 col-md-4 col-lg">
         <div class="card text-bg-secondary h-100">
+          <div class="card-body text-center">
+            <div class="display-6">{{ statistics.summary.offen || 0 }}</div>
+            <div>Offen</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-lg">
+        <div class="card text-bg-purple h-100">
           <div class="card-body text-center">
             <div class="display-6">{{ statistics.summary.orte }}</div>
             <div>Orte</div>
@@ -104,8 +112,7 @@
               <tr>
                 <th>Ort</th>
                 <th class="text-end">Events</th>
-                <th class="text-end">Zusagen</th>
-                <th class="text-end">Absagen</th>
+                <th style="min-width: 240px;">Zusagen / Absagen / Offen</th>
                 <th style="min-width: 200px;">Anteil Events</th>
               </tr>
             </thead>
@@ -113,8 +120,26 @@
               <tr v-for="loc in statistics.byLocation" :key="loc.ort">
                 <td><strong>{{ loc.ort }}</strong></td>
                 <td class="text-end">{{ loc.eventCount }}</td>
-                <td class="text-end text-success">{{ loc.zusagen || 0 }}</td>
-                <td class="text-end text-danger">{{ loc.absagen || 0 }}</td>
+                <td>
+                  <div v-if="locationExpected(loc)" class="progress" style="height: 18px;">
+                    <div class="progress-bar bg-success"
+                      :style="{ width: locationZusagePct(loc) + '%' }"
+                      :title="(loc.zusagen || 0) + ' Zusagen'">
+                      {{ locationZusagePct(loc) }}%
+                    </div>
+                    <div class="progress-bar bg-danger"
+                      :style="{ width: locationAbsagePct(loc) + '%' }"
+                      :title="(loc.absagen || 0) + ' Absagen'">
+                      {{ locationAbsagePct(loc) }}%
+                    </div>
+                    <div class="progress-bar bg-secondary"
+                      :style="{ width: locationOffenPct(loc) + '%' }"
+                      :title="(loc.offen || 0) + ' ohne Rückmeldung'">
+                      {{ locationOffenPct(loc) }}%
+                    </div>
+                  </div>
+                  <span v-else class="text-muted small">keine Daten</span>
+                </td>
                 <td>
                   <div class="progress" style="height: 18px;">
                     <div class="progress-bar progress-bar-purple"
@@ -125,7 +150,7 @@
                 </td>
               </tr>
               <tr v-if="!statistics.byLocation.length">
-                <td colspan="5" class="text-center text-muted">Keine Daten im Zeitraum</td>
+                <td colspan="4" class="text-center text-muted">Keine Daten im Zeitraum</td>
               </tr>
             </tbody>
           </table>
@@ -138,14 +163,26 @@
             <strong>{{ loc.ort }}</strong>
             <span class="badge bg-primary">{{ loc.eventCount }} Events</span>
           </div>
-          <div class="small mb-1">
-            <span class="text-success me-3">
-              <i class="bi bi-hand-thumbs-up"></i> {{ loc.zusagen || 0 }}
-            </span>
-            <span class="text-danger">
-              <i class="bi bi-hand-thumbs-down"></i> {{ loc.absagen || 0 }}
-            </span>
+          <div class="mb-1" style="font-size: 0.8rem;">Zusagen / Absagen / Offen</div>
+          <div v-if="locationExpected(loc)" class="progress mb-2" style="height: 14px;">
+            <div class="progress-bar bg-success"
+              :style="{ width: locationZusagePct(loc) + '%' }"
+              :title="(loc.zusagen || 0) + ' Zusagen'">
+              {{ locationZusagePct(loc) }}%
+            </div>
+            <div class="progress-bar bg-danger"
+              :style="{ width: locationAbsagePct(loc) + '%' }"
+              :title="(loc.absagen || 0) + ' Absagen'">
+              {{ locationAbsagePct(loc) }}%
+            </div>
+            <div class="progress-bar bg-secondary"
+              :style="{ width: locationOffenPct(loc) + '%' }"
+              :title="(loc.offen || 0) + ' ohne Rückmeldung'">
+              {{ locationOffenPct(loc) }}%
+            </div>
           </div>
+          <div v-else class="text-muted small mb-2">keine Daten</div>
+          <div class="mb-1" style="font-size: 0.8rem;">Anteil Events</div>
           <div class="progress" style="height: 14px;">
             <div class="progress-bar progress-bar-purple"
               :style="{ width: locationShare(loc) + '%' }">
@@ -477,6 +514,29 @@ function locationShare(loc) {
   return Math.round((loc.eventCount / maxLocationEvents.value) * 100);
 }
 
+function locationExpected(loc) {
+  return Number(loc.erwartet) || 0;
+}
+
+function locationZusagePct(loc) {
+  const total = locationExpected(loc);
+  if (!total) return 0;
+  return Math.round(((loc.zusagen || 0) / total) * 100);
+}
+
+function locationAbsagePct(loc) {
+  const total = locationExpected(loc);
+  if (!total) return 0;
+  return Math.round(((loc.absagen || 0) / total) * 100);
+}
+
+function locationOffenPct(loc) {
+  const total = locationExpected(loc);
+  if (!total) return 0;
+  // Rest auf 100 damit Rundungsfehler aufgefangen werden
+  return Math.max(0, 100 - locationZusagePct(loc) - locationAbsagePct(loc));
+}
+
 const sortedUsers = computed(() => {
   if (!statistics.value) return [];
   const list = [...statistics.value.byUser];
@@ -566,6 +626,11 @@ onMounted(() => {
 }
 
 .progress-bar-purple {
+  background-color: #9432a5;
+  color: #fff;
+}
+
+.text-bg-purple {
   background-color: #9432a5;
   color: #fff;
 }
