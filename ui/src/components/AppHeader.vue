@@ -17,7 +17,7 @@
               <li v-if="isLoggedIn" class="nav-item">
                 <RouterLink class="nav-link" to="/">Events</RouterLink>
               </li>
-              <li v-if="isLoggedIn" class="nav-item">
+              <li v-if="isLoggedIn && isAdmin" class="nav-item">
                 <RouterLink class="nav-link" to="/statistics">
                   <i class="bi bi-bar-chart-line"></i> Statistik
                 </RouterLink>

@@ -221,7 +221,9 @@ const apiRoutes = {
     });
 
     // Statistik über einen Zeitraum (?from=YYYY-MM-DD&to=YYYY-MM-DD)
-    app.get('/api/getStatistics', authMiddleware.check('benutzer'), async (req, res) => {
+    // Aus Datenschutzgründen nur für Admins zugänglich, da hier personenbezogene
+    // Auswertungen (Anwesenheit pro Mitglied) zurückgegeben werden.
+    app.get('/api/getStatistics', authMiddleware.check('admin'), async (req, res) => {
       try {
         const now = new Date();
         const year = now.getFullYear();

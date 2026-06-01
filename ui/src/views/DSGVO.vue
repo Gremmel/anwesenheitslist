@@ -31,9 +31,15 @@
     <p>
       <strong>Sichtbarkeit für andere Nutzer:</strong>
       Angemeldete Benutzer können die Teilnahme-Rückmeldungen aller Mitglieder zu den einzelnen Veranstaltungen einsehen.
-      Darüber hinaus steht eine <strong>Statistik-Auswertung</strong> zur Verfügung, in der angemeldete Benutzer
-      personenbezogen einsehen können, wie oft eine Person in einem wählbaren Zeitraum anwesend war,
+    </p>
+    <p>
+      <strong>Statistik-Auswertung (nur Admins):</strong>
+      Zusätzlich steht eine personenbezogene Statistik-Auswertung zur Verfügung, in der
+      einsehbar ist, wie oft eine Person in einem wählbaren Zeitraum anwesend war,
       abgesagt oder sich gemeldet hat (inkl. prozentualer Quoten).
+      Diese Auswertung ist <strong>ausschließlich für Benutzer mit der Rolle &bdquo;Admin&ldquo;</strong>
+      (Vorstand bzw. Orga-Team) zugänglich und dient der internen Vereinsplanung sowie der Ermittlung
+      der Anwesenheitsbesten am Jahresende.
     </p>
 
     <h2>3. Rechtsgrundlage der Verarbeitung</h2>

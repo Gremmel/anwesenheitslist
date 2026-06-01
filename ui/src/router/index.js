@@ -91,7 +91,7 @@ const router = createRouter({
       name: "statistics",
       component: StatisticsView,
       meta: {
-        requiresRole: "benutzer",
+        requiresRole: "admin",
       },
     }
   ],
