@@ -229,8 +229,7 @@
                 <th class="text-end text-danger">Abgesagt</th>
                 <th class="text-end">Gemeldet</th>
                 <th class="text-end text-muted">Offen</th>
-                <th style="min-width: 180px;">Anwesenheits&shy;quote</th>
-                <th style="min-width: 180px;">Melde&shy;quote</th>
+                <th style="min-width: 240px;">Zusagen / Absagen / Offen</th>
               </tr>
             </thead>
             <tbody>
@@ -241,24 +240,28 @@
                 <td class="text-end">{{ u.gemeldet }}</td>
                 <td class="text-end text-muted">{{ u.offen }}</td>
                 <td>
-                  <div class="progress" style="height: 18px;">
+                  <div v-if="userExpected(u)" class="progress" style="height: 18px;">
                     <div class="progress-bar bg-success"
-                      :style="{ width: u.anwesenheitsQuote + '%' }">
-                      {{ u.anwesenheitsQuote }}%
+                      :style="{ width: userZusagePct(u) + '%' }"
+                      :title="u.anwesend + ' Zusagen'">
+                      {{ userZusagePct(u) }}%
+                    </div>
+                    <div class="progress-bar bg-danger"
+                      :style="{ width: userAbsagePct(u) + '%' }"
+                      :title="u.abwesend + ' Absagen'">
+                      {{ userAbsagePct(u) }}%
+                    </div>
+                    <div class="progress-bar bg-secondary"
+                      :style="{ width: userOffenPct(u) + '%' }"
+                      :title="u.offen + ' ohne Rückmeldung'">
+                      {{ userOffenPct(u) }}%
                     </div>
                   </div>
-                </td>
-                <td>
-                  <div class="progress" style="height: 18px;">
-                    <div class="progress-bar bg-primary"
-                      :style="{ width: u.meldeQuote + '%' }">
-                      {{ u.meldeQuote }}%
-                    </div>
-                  </div>
+                  <span v-else class="text-muted small">keine Daten</span>
                 </td>
               </tr>
               <tr v-if="!sortedUsers.length">
-                <td colspan="7" class="text-center text-muted">Keine Benutzer</td>
+                <td colspan="6" class="text-center text-muted">Keine Benutzer</td>
               </tr>
             </tbody>
           </table>
@@ -285,28 +288,32 @@
               <div style="font-size: 0.75rem;">offen</div>
             </div>
           </div>
-          <div class="mb-1" style="font-size: 0.8rem;">Anwesenheitsquote</div>
-          <div class="progress mb-2" style="height: 14px;">
+          <div class="mb-1" style="font-size: 0.8rem;">Zusagen / Absagen / Offen</div>
+          <div v-if="userExpected(u)" class="progress" style="height: 14px;">
             <div class="progress-bar bg-success"
-              :style="{ width: u.anwesenheitsQuote + '%' }">
-              {{ u.anwesenheitsQuote }}%
+              :style="{ width: userZusagePct(u) + '%' }"
+              :title="u.anwesend + ' Zusagen'">
+              {{ userZusagePct(u) }}%
+            </div>
+            <div class="progress-bar bg-danger"
+              :style="{ width: userAbsagePct(u) + '%' }"
+              :title="u.abwesend + ' Absagen'">
+              {{ userAbsagePct(u) }}%
+            </div>
+            <div class="progress-bar bg-secondary"
+              :style="{ width: userOffenPct(u) + '%' }"
+              :title="u.offen + ' ohne Rückmeldung'">
+              {{ userOffenPct(u) }}%
             </div>
           </div>
-          <div class="mb-1" style="font-size: 0.8rem;">Meldequote</div>
-          <div class="progress" style="height: 14px;">
-            <div class="progress-bar bg-primary"
-              :style="{ width: u.meldeQuote + '%' }">
-              {{ u.meldeQuote }}%
-            </div>
-          </div>
+          <div v-else class="text-muted small">keine Daten</div>
         </li>
         <li v-if="!sortedUsers.length" class="list-group-item text-center text-muted">
           Keine Benutzer
         </li>
       </ul>
       <div class="card-footer text-muted small">
-        <strong>Anwesenheitsquote</strong> = Anwesend / Events insgesamt.
-        <strong>Meldequote</strong> = Rückmeldungen (Zu- oder Absage) / Events insgesamt.
+        Balken: grün = Zusagen, rot = Absagen, grau = ohne Rückmeldung. Bezug: Events insgesamt.
       </div>
     </div>
 
@@ -525,6 +532,28 @@ function locationShare(loc) {
 function registerOffen(r) {
   const possible = (Number(r.mitglieder) || 0) * (maxLocationEvents.value || 0);
   return Math.max(0, possible - (Number(r.gemeldet) || 0));
+}
+
+function userExpected() {
+  return maxLocationEvents.value || 0;
+}
+
+function userZusagePct(u) {
+  const total = userExpected();
+  if (!total) return 0;
+  return Math.round(((Number(u.anwesend) || 0) / total) * 100);
+}
+
+function userAbsagePct(u) {
+  const total = userExpected();
+  if (!total) return 0;
+  return Math.round(((Number(u.abwesend) || 0) / total) * 100);
+}
+
+function userOffenPct(u) {
+  const total = userExpected();
+  if (!total) return 0;
+  return Math.max(0, 100 - userZusagePct(u) - userAbsagePct(u));
 }
 
 function registerExpected(r) {
