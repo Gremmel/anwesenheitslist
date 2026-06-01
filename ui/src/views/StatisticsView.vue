@@ -93,7 +93,8 @@
       <div class="card-header">
         <h5 class="mb-0"><i class="bi bi-geo-alt"></i> Events nach Ort</h5>
       </div>
-      <div class="card-body p-0">
+      <!-- Desktop / Tablet: Tabelle -->
+      <div class="card-body p-0 d-none d-md-block">
         <div class="table-responsive">
           <table class="table table-striped mb-0 align-middle">
             <thead>
@@ -113,7 +114,7 @@
                 <td class="text-end text-danger">{{ loc.absagen || 0 }}</td>
                 <td>
                   <div class="progress" style="height: 18px;">
-                    <div class="progress-bar bg-info"
+                    <div class="progress-bar progress-bar-purple"
                       :style="{ width: locationShare(loc) + '%' }">
                       {{ locationShare(loc) }}%
                     </div>
@@ -127,6 +128,32 @@
           </table>
         </div>
       </div>
+      <!-- Mobile: Karten -->
+      <ul class="list-group list-group-flush d-md-none">
+        <li v-for="loc in statistics.byLocation" :key="'m-' + loc.ort" class="list-group-item">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <strong>{{ loc.ort }}</strong>
+            <span class="badge bg-primary">{{ loc.eventCount }} Events</span>
+          </div>
+          <div class="small mb-1">
+            <span class="text-success me-3">
+              <i class="bi bi-hand-thumbs-up"></i> {{ loc.zusagen || 0 }}
+            </span>
+            <span class="text-danger">
+              <i class="bi bi-hand-thumbs-down"></i> {{ loc.absagen || 0 }}
+            </span>
+          </div>
+          <div class="progress" style="height: 14px;">
+            <div class="progress-bar progress-bar-purple"
+              :style="{ width: locationShare(loc) + '%' }">
+              {{ locationShare(loc) }}%
+            </div>
+          </div>
+        </li>
+        <li v-if="!statistics.byLocation.length" class="list-group-item text-center text-muted">
+          Keine Daten im Zeitraum
+        </li>
+      </ul>
     </div>
 
     <!-- User -->
@@ -141,14 +168,12 @@
             :class="{ active: sortBy === 'gemeldet' }"
             @click="sortBy = 'gemeldet'">Gemeldet</button>
           <button class="btn btn-outline-secondary"
-            :class="{ active: sortBy === 'quote' }"
-            @click="sortBy = 'quote'">Quote</button>
-          <button class="btn btn-outline-secondary"
             :class="{ active: sortBy === 'name' }"
             @click="sortBy = 'name'">Name</button>
         </div>
       </div>
-      <div class="card-body p-0">
+      <!-- Desktop / Tablet: Tabelle -->
+      <div class="card-body p-0 d-none d-md-block">
         <div class="table-responsive">
           <table class="table table-striped mb-0 align-middle">
             <thead>
@@ -193,6 +218,46 @@
           </table>
         </div>
       </div>
+      <!-- Mobile: Karten -->
+      <ul class="list-group list-group-flush d-md-none">
+        <li v-for="u in sortedUsers" :key="'m-' + u.userId" class="list-group-item">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <strong class="text-truncate me-2">{{ u.username }}</strong>
+            <span class="badge bg-secondary">{{ u.gemeldet }}/{{ statistics.summary.eventCount }}</span>
+          </div>
+          <div class="row g-2 small mb-2">
+            <div class="col-4 text-success">
+              <i class="bi bi-hand-thumbs-up"></i> <strong>{{ u.anwesend }}</strong>
+              <div class="text-muted" style="font-size: 0.75rem;">anwesend</div>
+            </div>
+            <div class="col-4 text-danger">
+              <i class="bi bi-hand-thumbs-down"></i> <strong>{{ u.abwesend }}</strong>
+              <div class="text-muted" style="font-size: 0.75rem;">abgesagt</div>
+            </div>
+            <div class="col-4 text-muted">
+              <i class="bi bi-question-circle"></i> <strong>{{ u.offen }}</strong>
+              <div style="font-size: 0.75rem;">offen</div>
+            </div>
+          </div>
+          <div class="mb-1" style="font-size: 0.8rem;">Anwesenheitsquote</div>
+          <div class="progress mb-2" style="height: 14px;">
+            <div class="progress-bar bg-success"
+              :style="{ width: u.anwesenheitsQuote + '%' }">
+              {{ u.anwesenheitsQuote }}%
+            </div>
+          </div>
+          <div class="mb-1" style="font-size: 0.8rem;">Meldequote</div>
+          <div class="progress" style="height: 14px;">
+            <div class="progress-bar bg-primary"
+              :style="{ width: u.meldeQuote + '%' }">
+              {{ u.meldeQuote }}%
+            </div>
+          </div>
+        </li>
+        <li v-if="!sortedUsers.length" class="list-group-item text-center text-muted">
+          Keine Benutzer
+        </li>
+      </ul>
       <div class="card-footer text-muted small">
         <strong>Anwesenheitsquote</strong> = Anwesend / Events insgesamt.
         <strong>Meldequote</strong> = Rückmeldungen (Zu- oder Absage) / Events insgesamt.
@@ -204,7 +269,8 @@
       <div class="card-header">
         <h5 class="mb-0"><i class="bi bi-calendar-event"></i> Events im Zeitraum</h5>
       </div>
-      <div class="card-body p-0">
+      <!-- Desktop / Tablet: Tabelle -->
+      <div class="card-body p-0 d-none d-md-block">
         <div class="table-responsive">
           <table class="table table-sm mb-0">
             <thead>
@@ -227,6 +293,21 @@
           </table>
         </div>
       </div>
+      <!-- Mobile: Karten -->
+      <ul class="list-group list-group-flush d-md-none">
+        <li v-for="e in statistics.events" :key="'m-' + e.id" class="list-group-item">
+          <div class="d-flex justify-content-between align-items-center">
+            <strong>{{ e.bezeichnung }}</strong>
+            <span class="badge bg-light text-dark">{{ formatDate(e.dateTime) }}</span>
+          </div>
+          <div class="small text-muted">
+            <i class="bi bi-geo-alt"></i> {{ e.ort }}
+          </div>
+        </li>
+        <li v-if="!statistics.events.length" class="list-group-item text-center text-muted">
+          Keine Events im Zeitraum
+        </li>
+      </ul>
     </div>
   </main>
 </template>
@@ -264,9 +345,6 @@ const sortedUsers = computed(() => {
   switch (sortBy.value) {
     case 'gemeldet':
       list.sort((a, b) => b.gemeldet - a.gemeldet || a.username.localeCompare(b.username));
-      break;
-    case 'quote':
-      list.sort((a, b) => b.anwesenheitsQuote - a.anwesenheitsQuote || a.username.localeCompare(b.username));
       break;
     case 'name':
       list.sort((a, b) => a.username.localeCompare(b.username));
@@ -330,5 +408,23 @@ onMounted(() => {
 <style scoped>
 .display-6 {
   font-weight: 600;
+}
+
+.progress-bar-purple {
+  background-color: #9432a5;
+  color: #fff;
+}
+
+/* Kompaktere Karten auf Smartphones */
+@media (max-width: 575.98px) {
+  .display-6 {
+    font-size: 1.6rem;
+  }
+  h2 {
+    font-size: 1.4rem;
+  }
+  .card-header h5 {
+    font-size: 1rem;
+  }
 }
 </style>
