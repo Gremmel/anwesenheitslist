@@ -342,9 +342,8 @@
                 <th class="text-end">Mitglieder</th>
                 <th class="text-end text-success">Anwesend</th>
                 <th class="text-end text-danger">Abgesagt</th>
-                <th class="text-end">Gemeldet</th>
-                <th style="min-width: 180px;">Anwesenheits&shy;quote</th>
-                <th style="min-width: 180px;">Melde&shy;quote</th>
+                <th class="text-end text-muted">Offen</th>
+                <th style="min-width: 240px;">Zusagen / Absagen / Offen</th>
               </tr>
             </thead>
             <tbody>
@@ -353,26 +352,30 @@
                 <td class="text-end">{{ r.mitglieder }}</td>
                 <td class="text-end text-success fw-bold">{{ r.anwesend }}</td>
                 <td class="text-end text-danger">{{ r.abwesend }}</td>
-                <td class="text-end">{{ r.gemeldet }}</td>
+                <td class="text-end text-muted">{{ registerOffen(r) }}</td>
                 <td>
-                  <div class="progress" style="height: 18px;">
+                  <div v-if="registerExpected(r)" class="progress" style="height: 18px;">
                     <div class="progress-bar bg-success"
-                      :style="{ width: r.anwesenheitsQuote + '%' }">
-                      {{ r.anwesenheitsQuote }}%
+                      :style="{ width: registerZusagePct(r) + '%' }"
+                      :title="r.anwesend + ' Zusagen'">
+                      {{ registerZusagePct(r) }}%
+                    </div>
+                    <div class="progress-bar bg-danger"
+                      :style="{ width: registerAbsagePct(r) + '%' }"
+                      :title="r.abwesend + ' Absagen'">
+                      {{ registerAbsagePct(r) }}%
+                    </div>
+                    <div class="progress-bar bg-secondary"
+                      :style="{ width: registerOffenPct(r) + '%' }"
+                      :title="registerOffen(r) + ' ohne Rückmeldung'">
+                      {{ registerOffenPct(r) }}%
                     </div>
                   </div>
-                </td>
-                <td>
-                  <div class="progress" style="height: 18px;">
-                    <div class="progress-bar bg-primary"
-                      :style="{ width: r.meldeQuote + '%' }">
-                      {{ r.meldeQuote }}%
-                    </div>
-                  </div>
+                  <span v-else class="text-muted small">keine Daten</span>
                 </td>
               </tr>
               <tr v-if="!sortedRegisters.length">
-                <td colspan="7" class="text-center text-muted">Keine Register</td>
+                <td colspan="6" class="text-center text-muted">Keine Register</td>
               </tr>
             </tbody>
           </table>
@@ -394,25 +397,30 @@
               <i class="bi bi-hand-thumbs-down"></i> <strong>{{ r.abwesend }}</strong>
               <div class="text-muted" style="font-size: 0.75rem;">abgesagt</div>
             </div>
-            <div class="col-4">
-              <strong>{{ r.gemeldet }}</strong>
-              <div class="text-muted" style="font-size: 0.75rem;">gemeldet</div>
+            <div class="col-4 text-muted">
+              <i class="bi bi-question-circle"></i> <strong>{{ registerOffen(r) }}</strong>
+              <div style="font-size: 0.75rem;">offen</div>
             </div>
           </div>
-          <div class="mb-1" style="font-size: 0.8rem;">Anwesenheitsquote</div>
-          <div class="progress mb-2" style="height: 14px;">
+          <div class="mb-1" style="font-size: 0.8rem;">Zusagen / Absagen / Offen</div>
+          <div v-if="registerExpected(r)" class="progress" style="height: 14px;">
             <div class="progress-bar bg-success"
-              :style="{ width: r.anwesenheitsQuote + '%' }">
-              {{ r.anwesenheitsQuote }}%
+              :style="{ width: registerZusagePct(r) + '%' }"
+              :title="r.anwesend + ' Zusagen'">
+              {{ registerZusagePct(r) }}%
+            </div>
+            <div class="progress-bar bg-danger"
+              :style="{ width: registerAbsagePct(r) + '%' }"
+              :title="r.abwesend + ' Absagen'">
+              {{ registerAbsagePct(r) }}%
+            </div>
+            <div class="progress-bar bg-secondary"
+              :style="{ width: registerOffenPct(r) + '%' }"
+              :title="registerOffen(r) + ' ohne Rückmeldung'">
+              {{ registerOffenPct(r) }}%
             </div>
           </div>
-          <div class="mb-1" style="font-size: 0.8rem;">Meldequote</div>
-          <div class="progress" style="height: 14px;">
-            <div class="progress-bar bg-primary"
-              :style="{ width: r.meldeQuote + '%' }">
-              {{ r.meldeQuote }}%
-            </div>
-          </div>
+          <div v-else class="text-muted small">keine Daten</div>
         </li>
         <li v-if="!sortedRegisters.length" class="list-group-item text-center text-muted">
           Keine Register
@@ -512,6 +520,33 @@ const maxLocationEvents = computed(() => {
 function locationShare(loc) {
   if (!maxLocationEvents.value) return 0;
   return Math.round((loc.eventCount / maxLocationEvents.value) * 100);
+}
+
+function registerOffen(r) {
+  const possible = (Number(r.mitglieder) || 0) * (maxLocationEvents.value || 0);
+  return Math.max(0, possible - (Number(r.gemeldet) || 0));
+}
+
+function registerExpected(r) {
+  return (Number(r.mitglieder) || 0) * (maxLocationEvents.value || 0);
+}
+
+function registerZusagePct(r) {
+  const total = registerExpected(r);
+  if (!total) return 0;
+  return Math.round(((Number(r.anwesend) || 0) / total) * 100);
+}
+
+function registerAbsagePct(r) {
+  const total = registerExpected(r);
+  if (!total) return 0;
+  return Math.round(((Number(r.abwesend) || 0) / total) * 100);
+}
+
+function registerOffenPct(r) {
+  const total = registerExpected(r);
+  if (!total) return 0;
+  return Math.max(0, 100 - registerZusagePct(r) - registerAbsagePct(r));
 }
 
 function locationExpected(loc) {
