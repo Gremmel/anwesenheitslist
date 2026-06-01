@@ -264,6 +264,113 @@
       </div>
     </div>
 
+    <!-- Register -->
+    <div v-if="statistics" class="card mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <h5 class="mb-0"><i class="bi bi-music-note-beamed"></i> Teilnahme je Register</h5>
+        <div class="btn-group btn-group-sm">
+          <button class="btn btn-outline-secondary"
+            :class="{ active: sortByReg === 'quote' }"
+            @click="sortByReg = 'quote'">Quote</button>
+          <button class="btn btn-outline-secondary"
+            :class="{ active: sortByReg === 'meldequote' }"
+            @click="sortByReg = 'meldequote'">Meldequote</button>
+          <button class="btn btn-outline-secondary"
+            :class="{ active: sortByReg === 'name' }"
+            @click="sortByReg = 'name'">Name</button>
+        </div>
+      </div>
+      <!-- Desktop / Tablet: Tabelle -->
+      <div class="card-body p-0 d-none d-md-block">
+        <div class="table-responsive">
+          <table class="table table-striped mb-0 align-middle">
+            <thead>
+              <tr>
+                <th>Register</th>
+                <th class="text-end">Mitglieder</th>
+                <th class="text-end text-success">Anwesend</th>
+                <th class="text-end text-danger">Abgesagt</th>
+                <th class="text-end">Gemeldet</th>
+                <th style="min-width: 180px;">Anwesenheits&shy;quote</th>
+                <th style="min-width: 180px;">Melde&shy;quote</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="r in sortedRegisters" :key="r.registerId">
+                <td><strong>{{ r.registerName }}</strong></td>
+                <td class="text-end">{{ r.mitglieder }}</td>
+                <td class="text-end text-success fw-bold">{{ r.anwesend }}</td>
+                <td class="text-end text-danger">{{ r.abwesend }}</td>
+                <td class="text-end">{{ r.gemeldet }}</td>
+                <td>
+                  <div class="progress" style="height: 18px;">
+                    <div class="progress-bar bg-success"
+                      :style="{ width: r.anwesenheitsQuote + '%' }">
+                      {{ r.anwesenheitsQuote }}%
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div class="progress" style="height: 18px;">
+                    <div class="progress-bar bg-primary"
+                      :style="{ width: r.meldeQuote + '%' }">
+                      {{ r.meldeQuote }}%
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <tr v-if="!sortedRegisters.length">
+                <td colspan="7" class="text-center text-muted">Keine Register</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Mobile: Karten -->
+      <ul class="list-group list-group-flush d-md-none">
+        <li v-for="r in sortedRegisters" :key="'m-' + r.registerId" class="list-group-item">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <strong class="text-truncate me-2">{{ r.registerName }}</strong>
+            <span class="badge bg-secondary">{{ r.mitglieder }} Mitgl.</span>
+          </div>
+          <div class="row g-2 small mb-2">
+            <div class="col-4 text-success">
+              <i class="bi bi-hand-thumbs-up"></i> <strong>{{ r.anwesend }}</strong>
+              <div class="text-muted" style="font-size: 0.75rem;">anwesend</div>
+            </div>
+            <div class="col-4 text-danger">
+              <i class="bi bi-hand-thumbs-down"></i> <strong>{{ r.abwesend }}</strong>
+              <div class="text-muted" style="font-size: 0.75rem;">abgesagt</div>
+            </div>
+            <div class="col-4">
+              <strong>{{ r.gemeldet }}</strong>
+              <div class="text-muted" style="font-size: 0.75rem;">gemeldet</div>
+            </div>
+          </div>
+          <div class="mb-1" style="font-size: 0.8rem;">Anwesenheitsquote</div>
+          <div class="progress mb-2" style="height: 14px;">
+            <div class="progress-bar bg-success"
+              :style="{ width: r.anwesenheitsQuote + '%' }">
+              {{ r.anwesenheitsQuote }}%
+            </div>
+          </div>
+          <div class="mb-1" style="font-size: 0.8rem;">Meldequote</div>
+          <div class="progress" style="height: 14px;">
+            <div class="progress-bar bg-primary"
+              :style="{ width: r.meldeQuote + '%' }">
+              {{ r.meldeQuote }}%
+            </div>
+          </div>
+        </li>
+        <li v-if="!sortedRegisters.length" class="list-group-item text-center text-muted">
+          Keine Register
+        </li>
+      </ul>
+      <div class="card-footer text-muted small">
+        Quoten beziehen sich auf <em>Mitglieder × Events</em> als mögliche Maximum-Meldungen.
+      </div>
+    </div>
+
     <!-- Events Liste -->
     <div v-if="statistics" class="card mb-5">
       <div class="card-header">
@@ -323,6 +430,7 @@ const statistics = ref(null);
 const loading = ref(false);
 const errorMessage = ref('');
 const sortBy = ref('anwesend');
+const sortByReg = ref('quote');
 const onlyPast = ref(true);
 
 function todayIso() {
@@ -352,6 +460,23 @@ const sortedUsers = computed(() => {
     case 'anwesend':
     default:
       list.sort((a, b) => b.anwesend - a.anwesend || a.username.localeCompare(b.username));
+  }
+  return list;
+});
+
+const sortedRegisters = computed(() => {
+  if (!statistics.value) return [];
+  const list = [...statistics.value.byRegister];
+  switch (sortByReg.value) {
+    case 'meldequote':
+      list.sort((a, b) => b.meldeQuote - a.meldeQuote || a.registerName.localeCompare(b.registerName));
+      break;
+    case 'name':
+      list.sort((a, b) => a.registerName.localeCompare(b.registerName));
+      break;
+    case 'quote':
+    default:
+      list.sort((a, b) => b.anwesenheitsQuote - a.anwesenheitsQuote || a.registerName.localeCompare(b.registerName));
   }
   return list;
 });

@@ -199,6 +199,43 @@ class ChallengesController {
           : 0;
       }
 
+      // Statistik pro Register
+      const byRegister = dbController.prepare(
+        `SELECT
+            r.id            AS registerId,
+            r.name          AS registerName,
+            r.sortierung    AS sortierung,
+            COUNT(DISTINCT fu.id) AS mitglieder,
+            SUM(CASE WHEN ez.zugesagt = 1 THEN 1 ELSE 0 END) AS anwesend,
+            SUM(CASE WHEN ez.zugesagt = 0 THEN 1 ELSE 0 END) AS abwesend,
+            SUM(CASE WHEN ez.zugesagt IS NOT NULL THEN 1 ELSE 0 END) AS gemeldet
+           FROM register r
+           INNER JOIN user_register ur ON ur.register_id = r.id
+           INNER JOIN fos_user fu      ON fu.id = ur.user_id
+           LEFT JOIN event_zusagen ez
+             ON ez.user_id = fu.id
+            AND ez.event_id IN (
+              SELECT id FROM events WHERE dateTime >= ? AND dateTime <= ?
+            )
+          GROUP BY r.id, r.name, r.sortierung
+          ORDER BY r.sortierung ASC, r.name ASC`
+      ).all(fromIso, toIso);
+
+      for (const r of byRegister) {
+        r.mitglieder = Number(r.mitglieder) || 0;
+        r.anwesend = Number(r.anwesend) || 0;
+        r.abwesend = Number(r.abwesend) || 0;
+        r.gemeldet = Number(r.gemeldet) || 0;
+        // Mögliche Anwesenheiten = Mitglieder * Events
+        const possible = r.mitglieder * eventCount;
+        r.anwesenheitsQuote = possible > 0
+          ? Math.round((r.anwesend / possible) * 100)
+          : 0;
+        r.meldeQuote = possible > 0
+          ? Math.round((r.gemeldet / possible) * 100)
+          : 0;
+      }
+
       // Summary
       const totals = dbController.prepare(
         `SELECT
@@ -225,7 +262,8 @@ class ChallengesController {
         summary,
         events,
         byLocation,
-        byUser
+        byUser,
+        byRegister
       };
     } catch (error) {
       logger.error('Fehler beim Erstellen der Statistik:', error);
