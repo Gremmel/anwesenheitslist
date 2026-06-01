@@ -17,6 +17,11 @@
               <li v-if="isLoggedIn" class="nav-item">
                 <RouterLink class="nav-link" to="/">Events</RouterLink>
               </li>
+              <li v-if="isLoggedIn" class="nav-item">
+                <RouterLink class="nav-link" to="/statistics">
+                  <i class="bi bi-bar-chart-line"></i> Statistik
+                </RouterLink>
+              </li>
             </ul>
             <div class="d-flex">
               <div class="btn-group">

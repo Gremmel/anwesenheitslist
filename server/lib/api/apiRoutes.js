@@ -220,6 +220,22 @@ const apiRoutes = {
       }
     });
 
+    // Statistik über einen Zeitraum (?from=YYYY-MM-DD&to=YYYY-MM-DD)
+    app.get('/api/getStatistics', authMiddleware.check('benutzer'), async (req, res) => {
+      try {
+        const now = new Date();
+        const year = now.getFullYear();
+        const from = req.query.from || `${year}-01-01`;
+        const to = req.query.to || `${year}-12-31`;
+
+        const statistics = await eventController.getStatistics(from, to);
+
+        res.json({ statistics });
+      } catch (error) {
+        res.status(500).json({ message: error.message });
+      }
+    });
+
     // löscht ein Event
     app.post('/api/deleteEvent/:eventId', authMiddleware.check('admin'), async (req, res) => {
       try {

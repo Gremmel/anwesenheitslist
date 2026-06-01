@@ -133,6 +133,104 @@ class ChallengesController {
     }
   }
 
+  // Statistik über einen Zeitraum
+  // from / to als ISO-Strings (YYYY-MM-DD oder volles ISO-DateTime)
+  async getStatistics (from, to) {
+    try {
+      // Normalisiere Grenzen: from auf Tagesanfang, to auf Tagesende
+      const fromIso = `${String(from).slice(0, 10)}T00:00:00.000`;
+      const toIso = `${String(to).slice(0, 10)}T23:59:59.999`;
+
+      // Events im Zeitraum
+      const events = dbController.prepare(
+        `SELECT id, bezeichnung, dateTime, ort
+           FROM events
+          WHERE dateTime >= ? AND dateTime <= ?
+          ORDER BY dateTime ASC`
+      ).all(fromIso, toIso);
+
+      const eventCount = events.length;
+
+      // Statistik pro Ort
+      const byLocation = dbController.prepare(
+        `SELECT
+            COALESCE(NULLIF(TRIM(ort), ''), 'Unbekannt') AS ort,
+            COUNT(DISTINCT e.id) AS eventCount,
+            SUM(CASE WHEN ez.zugesagt = 1 THEN 1 ELSE 0 END) AS zusagen,
+            SUM(CASE WHEN ez.zugesagt = 0 THEN 1 ELSE 0 END) AS absagen
+           FROM events e
+           LEFT JOIN event_zusagen ez ON ez.event_id = e.id
+          WHERE e.dateTime >= ? AND e.dateTime <= ?
+          GROUP BY COALESCE(NULLIF(TRIM(ort), ''), 'Unbekannt')
+          ORDER BY eventCount DESC, ort ASC`
+      ).all(fromIso, toIso);
+
+      // Statistik pro User (Anwesenheit + Meldungen)
+      const byUser = dbController.prepare(
+        `SELECT
+            fu.id           AS userId,
+            fu.username     AS username,
+            SUM(CASE WHEN ez.zugesagt = 1 THEN 1 ELSE 0 END) AS anwesend,
+            SUM(CASE WHEN ez.zugesagt = 0 THEN 1 ELSE 0 END) AS abwesend,
+            SUM(CASE WHEN ez.zugesagt IS NOT NULL THEN 1 ELSE 0 END) AS gemeldet
+           FROM fos_user fu
+           LEFT JOIN event_zusagen ez
+             ON ez.user_id = fu.id
+            AND ez.event_id IN (
+              SELECT id FROM events WHERE dateTime >= ? AND dateTime <= ?
+            )
+          GROUP BY fu.id, fu.username
+          ORDER BY anwesend DESC, gemeldet DESC, username ASC`
+      ).all(fromIso, toIso);
+
+      // Quoten je User berechnen
+      for (const u of byUser) {
+        u.anwesend = Number(u.anwesend) || 0;
+        u.abwesend = Number(u.abwesend) || 0;
+        u.gemeldet = Number(u.gemeldet) || 0;
+        u.offen = Math.max(0, eventCount - u.gemeldet);
+        u.anwesenheitsQuote = eventCount > 0
+          ? Math.round((u.anwesend / eventCount) * 100)
+          : 0;
+        u.meldeQuote = eventCount > 0
+          ? Math.round((u.gemeldet / eventCount) * 100)
+          : 0;
+      }
+
+      // Summary
+      const totals = dbController.prepare(
+        `SELECT
+            SUM(CASE WHEN ez.zugesagt = 1 THEN 1 ELSE 0 END) AS zusagen,
+            SUM(CASE WHEN ez.zugesagt = 0 THEN 1 ELSE 0 END) AS absagen,
+            COUNT(ez.id) AS meldungen
+           FROM event_zusagen ez
+          WHERE ez.event_id IN (
+            SELECT id FROM events WHERE dateTime >= ? AND dateTime <= ?
+          )`
+      ).get(fromIso, toIso);
+
+      const summary = {
+        eventCount,
+        zusagen: Number(totals?.zusagen) || 0,
+        absagen: Number(totals?.absagen) || 0,
+        meldungen: Number(totals?.meldungen) || 0,
+        orte: byLocation.length
+      };
+
+      return {
+        from: fromIso,
+        to: toIso,
+        summary,
+        events,
+        byLocation,
+        byUser
+      };
+    } catch (error) {
+      logger.error('Fehler beim Erstellen der Statistik:', error);
+      throw new Error('Konnte die Statistik nicht erstellen.');
+    }
+  }
+
   // Event hinzufügen
   addEvent (event) {
     try {
