@@ -323,7 +323,7 @@ const statistics = ref(null);
 const loading = ref(false);
 const errorMessage = ref('');
 const sortBy = ref('anwesend');
-const onlyPast = ref(false);
+const onlyPast = ref(true);
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);

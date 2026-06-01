@@ -166,6 +166,7 @@ class ChallengesController {
       ).all(fromIso, toIso);
 
       // Statistik pro User (Anwesenheit + Meldungen)
+      // Nur User, die mindestens einem Register zugeordnet sind
       const byUser = dbController.prepare(
         `SELECT
             fu.id           AS userId,
@@ -174,6 +175,7 @@ class ChallengesController {
             SUM(CASE WHEN ez.zugesagt = 0 THEN 1 ELSE 0 END) AS abwesend,
             SUM(CASE WHEN ez.zugesagt IS NOT NULL THEN 1 ELSE 0 END) AS gemeldet
            FROM fos_user fu
+           INNER JOIN user_register ur ON ur.user_id = fu.id
            LEFT JOIN event_zusagen ez
              ON ez.user_id = fu.id
             AND ez.event_id IN (

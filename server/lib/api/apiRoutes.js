@@ -25,7 +25,7 @@ const apiRoutes = {
         res.cookie('session_token', token, {
           httpOnly: true, // Cookie nicht durch JavaScript im Browser zugreifbar
           secure: true, // Setze dies auf true, wenn du HTTPS verwendest
-          maxAge: 3600000, // Cookie-Lebensdauer (z.B. 1 Stunde)
+          maxAge: 30 * 24 * 60 * 60 * 1000, // Cookie-Lebensdauer: 30 Tage (passt zu JWT expiresIn '30d')
           sameSite: 'strict' // Schützt vor CSRF-Angriffen
         });
 
